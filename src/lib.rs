@@ -1,7 +1,5 @@
-use std::env;
 use std::error::Error;
 use structopt::StructOpt;
-use std::path::PathBuf;
 use std::fs;
 
 #[derive(Debug,StructOpt)]
@@ -9,52 +7,67 @@ use std::fs;
 struct Opt {
     /// Find the file's line count 
     #[structopt(short = "l", long = "line")]
-    line: bool,
+    lines: bool,
     /// Find the file's word count
     #[structopt(short = "w", long = "word")]
-    word: bool,
+    words: bool,
     /// Find the file's character count
     #[structopt(short = "c", long = "char")]
     chars: bool,
     /// The file to run inln on
-    #[strcutopt(name = "FILE", parse(from_os_str))]
+    #[structopt(name = "FILE", parse(from_str))]
     input: String,
 }
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     let args = Opt::from_args(); 
     let contents = fs::read_to_string(args.input)?;
-    let result = match args {
-        Opt { lines } => inln_lines(&args, &contents),
-        Opt { words } => inln_words(&args, &contents),
-        Opt { chars } => inln_chars(&args, &contents),
-    };
-    
+    if args.lines {
+        let res = inln_lines(&args.lines, &contents).unwrap();
+        println!("The line count of the file is: {}", res);
+    }
+    if args.words {
+        let res = inln_words(&args.words, &contents).unwrap();
+        println!("The word count of the file is: {}", res);
+    }
+    if args.chars {
+        let res = inln_chars(&args.chars, &contents).unwrap();
+        println!("The character count of the file is: {}", res);
+    } 
     Ok(())
 }
 
-pub fn inln_lines(args: &Opt, contents: &str) -> usize {
-    if args.lines {
-        contents
+pub fn inln_lines(required: &bool, contents: &str) -> Option<usize> {
+    if *required {
+       Some(contents
             .lines()
             .count()
+       )   
+    } else {
+        None
     }
 }
 
-pub fn inln_words(args: &Opt, contents: &str) -> usize {
-    if args.words {
-        contents
+pub fn inln_words(required: &bool, contents: &str) -> Option<usize> {
+    if *required {
+        Some(contents
             .split_whitespace()
             .count()
+        )    
+    } else {
+        None
     }
 }
 
-pub fn inln_chars(args: &Opt, contents: &str) -> usize {
-    if args.chars {
-        contents
+pub fn inln_chars(required: &bool, contents: &str) -> Option<usize> {
+    if *required {
+        Some(contents
             .replace("\n", "")
             .replace(" ", "")
             .chars()
             .count()
+        )    
+    } else {
+        None
     }
 }
