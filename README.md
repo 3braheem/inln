@@ -1,2 +1,2 @@
-# inln---Line-parsing-tool
+# inln
 A line parser built in Rust
