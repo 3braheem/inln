@@ -1,58 +1,60 @@
 use std::env;
 use std::error::Error;
+use structopt::StructOpt;
+use std::path::PathBuf;
 use std::fs;
 
-pub struct Config {
-    pub action: String,
-    pub filename: String,
+#[derive(Debug,StructOpt)]
+#[structopt(name = "inln", about = "A file parser to read line, word, or char count.")]
+struct Opt {
+    /// Find the file's line count 
+    #[structopt(short = "l", long = "line")]
+    line: bool,
+    /// Find the file's word count
+    #[structopt(short = "w", long = "word")]
+    word: bool,
+    /// Find the file's character count
+    #[structopt(short = "c", long = "char")]
+    chars: bool,
+    /// The file to run inln on
+    #[strcutopt(name = "FILE", parse(from_os_str))]
+    input: String,
 }
 
-impl Config {
-    pub fn new(mut args: env::Args) -> Result<Config, &'static str> {
-        args.next();
-        let action = args.next().ok_or("No command specified.")?;
-        let filename = args.next().ok_or("No filename found.")?;
-        Ok(Config {
-            action,
-            filename,
-        })
-    }
-}
-
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let contents = fs::read_to_string(config.filename)?;
-    let results = inln_parse(&config.action, &contents);
-    match config.action.as_str() {
-        "l" => println!("The line count is: {}", results),
-        "w" => println!("The word count is: {}", results),
-        "c" => println!("The character count is: {}", results),
-        _ => {
-            eprintln!("Wrong arguments: Use l for lines, w for words, or c for characters");
-            std::process::exit(1);
-        }
-    }
+pub fn run() -> Result<(), Box<dyn Error>> {
+    let args = Opt::from_args(); 
+    let contents = fs::read_to_string(args.input)?;
+    let result = match args {
+        Opt { lines } => inln_lines(&args, &contents),
+        Opt { words } => inln_words(&args, &contents),
+        Opt { chars } => inln_chars(&args, &contents),
+    };
+    
     Ok(())
 }
 
-pub fn inln_parse<'a>(action: &str, contents: &'a str) -> usize {
-    match action {
-        "l" => {
-            contents
-                .lines()
-                .count()
-        }
-        "w" => {
-            contents
-                .split_whitespace()
-                .count()
-        }
-        "c" => {
-            contents
-                .replace("\n", "")
-                .replace(" ", "")
-                .chars()
-                .count()
-        }
-        _ => 0
+pub fn inln_lines(args: &Opt, contents: &str) -> usize {
+    if args.lines {
+        contents
+            .lines()
+            .count()
+    }
+}
+
+pub fn inln_words(args: &Opt, contents: &str) -> usize {
+    if args.words {
+        contents
+            .split_whitespace()
+            .count()
+    }
+}
+
+pub fn inln_chars(args: &Opt, contents: &str) -> usize {
+    if args.chars {
+        contents
+            .replace("\n", "")
+            .replace(" ", "")
+            .chars()
+            .count()
     }
 }
